@@ -1,0 +1,71 @@
+name: render
+
+on:
+  workflow_dispatch:
+    inputs:
+      job_id:
+        required: true
+      mode:
+        default: auto
+      topic:
+        default: ''
+      url:
+        default: ''
+      count:
+        default: '3'
+      recent:
+        default: ''
+      niche:
+        default: ''
+      language:
+        default: 'English'
+      voice:
+        default: 'en-US-AndrewNeural'
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      JOB_ID: ${{ inputs.job_id }}
+      MODE: ${{ inputs.mode }}
+      TOPIC: ${{ inputs.topic }}
+      SRC_URL: ${{ inputs.url }}
+      CLIP_COUNT: ${{ inputs.count }}
+      RECENT: ${{ inputs.recent }}
+      NICHE: ${{ inputs.niche }}
+      LANGUAGE_NAME: ${{ inputs.language }}
+      TTS_VOICE: ${{ inputs.voice }}
+      APP_URL: ${{ secrets.APP_URL }}
+      WORKER_SECRET: ${{ secrets.WORKER_SECRET }}
+      RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Install ffmpeg and fonts
+        run: sudo apt-get update -y && sudo apt-get install -y ffmpeg fonts-noto-core
+      - name: Install Python packages
+        run: pip install -r worker/requirements.txt
+      - name: Install Node packages
+        run: cd worker && npm install --no-audit --no-fund
+      - name: Write script and render video
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
+          YT_COOKIES: ${{ secrets.YT_COOKIES }}
+        run: python worker/main.py
+      - name: Upload video and notify app
+        env:
+          BLOB_READ_WRITE_TOKEN: ${{ secrets.BLOB_READ_WRITE_TOKEN }}
+        run: node worker/publish.mjs
+      - name: Report failure
+        if: failure()
+        run: node worker/publish.mjs fail
