@@ -68,6 +68,9 @@ Paste a link in the dashboard → the worker downloads it, transcribes it, asks 
 ## Files
 
 - `app/` dashboard + API routes · `lib/` database, YouTube, Instagram, scheduling
-- `worker/main.py` script + video maker · `worker/publish.mjs` upload + callback
+- `.github/worker/main.py` script + video maker · `.github/worker/publish.mjs` upload + callback
 - `.github/workflows/render.yml` video worker · `scheduler.yml` free cron
 - `schema.sql` Neon table
+
+## Vercel shows "Import multi-service project"?
+Fixed in this version: the worker now lives in `.github/worker/`, so Vercel sees only one Next.js app. If you ever see the multi-service screen again, click **Import single project** next to `app (Next.js)` or set Application Preset to **Next.js**.

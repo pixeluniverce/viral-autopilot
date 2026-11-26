@@ -14,6 +14,7 @@ export default function Home() {
   const [link, setLink] = useState('');
   const [count, setCount] = useState(3);
   const [when, setWhen] = useState('slot');
+  const [language, setLanguage] = useState('');
   const [msg, setMsg] = useState('');
   const [busy, setBusy] = useState(false);
 
@@ -137,12 +138,19 @@ export default function Home() {
           <h2>Make an AI video</h2>
           <label>Topic (leave empty = AI picks a viral topic)</label>
           <input value={topic} onChange={(e) => setTopic(e.target.value)} placeholder="e.g. 5 habits of rich people" />
+          <label>Language</label>
+          <select value={language} onChange={(e) => setLanguage(e.target.value)}>
+            <option value="">Auto (rotate Gujarati / Hindi / English)</option>
+            <option value="gujarati">Gujarati</option>
+            <option value="hindi">Hindi</option>
+            <option value="english">English</option>
+          </select>
           <label>Upload</label>
           <select value={when} onChange={(e) => setWhen(e.target.value)}>
             <option value="slot">At the next free slot</option>
             <option value="now">As soon as it is ready</option>
           </select>
-          <button disabled={busy} onClick={() => submit('/api/generate', { topic, when }, 'Started! Rendering takes about 3–6 minutes.')}>
+          <button disabled={busy} onClick={() => submit('/api/generate', { topic, when, language }, 'Started! Rendering takes about 3–6 minutes.')}>
             Create video
           </button>
         </div>
@@ -172,7 +180,7 @@ export default function Home() {
               <div>
                 <div className="title">{j.title || j.topic || (j.mode === 'clip' ? 'Clip job' : 'Auto topic')}</div>
                 <div className="meta">
-                  {j.mode === 'clip' ? 'clip' : 'AI video'} · upload {fmt(j.scheduledAt)}
+                  {j.mode === 'clip' ? 'clip' : `AI video · ${j.languageName || ''}`} · upload {fmt(j.scheduledAt)}
                   {j.published?.youtube && (
                     <> · <a href={j.published.youtube.url} target="_blank" rel="noreferrer">YouTube</a></>
                   )}
