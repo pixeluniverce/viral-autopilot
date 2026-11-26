@@ -41,12 +41,43 @@ def probe_size(path):
     return int(w), int(h)
 
 
-def llm_json(prompt, max_tokens=2500):
+def llm_text(prompt, max_tokens=2500):
+    """Free path: Google Gemini (GEMINI_API_KEY). Paid fallback: Claude (ANTHROPIC_API_KEY)."""
+    gkey = os.getenv("GEMINI_API_KEY", "").strip()
+    if gkey:
+        model = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+        last = None
+        for attempt in range(3):
+            r = requests.post(
+                f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
+                headers={"x-goog-api-key": gkey, "content-type": "application/json"},
+                json={
+                    "contents": [{"parts": [{"text": prompt}]}],
+                    "generationConfig": {"responseMimeType": "application/json", "temperature": 0.9},
+                },
+                timeout=120,
+            )
+            if r.status_code == 200:
+                parts = r.json()["candidates"][0]["content"]["parts"]
+                return "".join(p.get("text", "") for p in parts)
+            last = f"Gemini error {r.status_code}: {r.text[:300]}"
+            print(last, flush=True)
+            if r.status_code not in (429, 500, 503):
+                break
+            import time
+
+            time.sleep(20 * (attempt + 1))
+        raise RuntimeError(last)
+
     import anthropic
 
     client = anthropic.Anthropic()
     msg = client.messages.create(model=MODEL, max_tokens=max_tokens, messages=[{"role": "user", "content": prompt}])
-    text = "".join(b.text for b in msg.content if getattr(b, "type", "") == "text")
+    return "".join(b.text for b in msg.content if getattr(b, "type", "") == "text")
+
+
+def llm_json(prompt, max_tokens=2500):
+    text = llm_text(prompt, max_tokens)
     m = re.search(r"(\{.*\}|\[.*\])", text, re.S)
     if not m:
         raise RuntimeError("LLM did not return JSON: " + text[:200])

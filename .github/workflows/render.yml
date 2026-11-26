@@ -58,6 +58,7 @@ jobs:
         run: cd .github/worker && npm install --no-audit --no-fund
       - name: Write script and render video
         env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
           YT_COOKIES: ${{ secrets.YT_COOKIES }}
